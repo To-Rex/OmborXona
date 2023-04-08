@@ -39,6 +39,16 @@ type User struct {
 	Blocked   bool `json:"blocked"`
 }
 
+type Warehouse struct {
+	ID 	  	  int    `json:"id"`
+	Name      string `json:"name"`
+	City 	  string `json:"city"`
+	CreatedAt time.Time `json:"created_at"`
+	CreatedBy string `json:"created_by"`
+	Status    string `json:"status"`
+	Blocked   bool `json:"blocked"`
+}
+
 func passwordHash(password string) string {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), 10)
 	if err != nil {
@@ -75,6 +85,7 @@ func main() {
 	r.POST("/register", register)
 	r.POST("/login", login)
 	r.POST("/logout", logout)
+	r.POST("/addWarehouse", addWarehouse)
 
 	r.Run()
 }
@@ -160,7 +171,7 @@ func register(c *gin.Context) {
 		return
 	}
 
-	_, err = db.Exec("INSERT INTO users (username, email, password, name, surname, age, phone, promocode, status, roles, city, created_at, token, blocked) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)", user.ID, user.Username, user.Email, passwordHash(user.Password), user.Name, user.Surname, user.Age, user.Phone, user.Promocode, user.Status, user.Roles, user.City, user.CreatedAt, user.Token, user.Blocked)
+	_, err = db.Exec("INSERT INTO users (username, email, password, name, surname, age, phone, promocode, status, roles, city, created_at, token, blocked) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)", user.Username, user.Email, passwordHash(user.Password), user.Name, user.Surname, user.Age, user.Phone, user.Promocode, user.Status, user.Roles, user.City, user.CreatedAt, user.Token, user.Blocked)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -234,6 +245,67 @@ func logout(c *gin.Context) {
 		return
 	}
 	
+	c.JSON(http.StatusOK, gin.H{"status": "success"})
+}
+
+func addWarehouse(c *gin.Context) {
+	//if such a name exists error else add warehouse to db name, address, phone, city, status, created_at, created_by = username 
+	token := c.GetHeader("Authorization")
+	token = strings.TrimPrefix(token, "Bearer ")
+	claims := jwt.MapClaims{}
+	tkn, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte("secret"), nil 
+	})
+	if err != nil {
+		if err == jwt.ErrSignatureInvalid {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+			return
+		}
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !tkn.Valid {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	var warehouse Warehouse
+	err = c.BindJSON(&warehouse)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if warehouse.Name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "name is empty"})
+		return
+	}
+
+	if warehouse.City == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "city is empty"})
+		return
+	}
+
+	warehouse.CreatedAt = time.Now()
+	warehouse.CreatedBy = claims["username"].(string)
+	warehouse.Status = "active"
+	warehouse.Blocked = false
+
+	db := connectDB()
+	var name string
+	err = db.QueryRow("SELECT name FROM warehouses WHERE name = $1", warehouse.Name).Scan(&name)
+	if err == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "name already exist"})
+		return
+	}
+	//name,city,created_at,created_by,status,blocked
+
+	_, err = db.Exec("INSERT INTO warehouses (name, city, created_at, created_by, status, blocked) VALUES ($1, $2, $3, $4, $5, $6)", warehouse.Name, warehouse.City, warehouse.CreatedAt, warehouse.CreatedBy, warehouse.Status, warehouse.Blocked)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{"status": "success"})
 }
 	
