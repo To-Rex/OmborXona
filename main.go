@@ -101,7 +101,9 @@ func register(c *gin.Context) {
 	}
 
 	db := connectDB()
-	_, err = db.Exec("CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, username VARCHAR(255), email VARCHAR(255), password VARCHAR(255), name VARCHAR(255), surname VARCHAR(255), age INT,  phone VARCHAR(255), promocode VARCHAR(255), status VARCHAR(255), roles VARCHAR(255), city VARCHAR(255), created_at TIMESTAMP, token TEXT, blocked BOOLEAN)")
+	//_, err = db.Exec("CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, username TEXT, email TEXT, password TEXT, name TEXT, surname TEXT, age INT,  phone TEXT, promocode TEXT, status TEXT, roles TEXT, city TEXT, created_at TIMESTAMP, token TEXT, blocked BOOLEAN)")
+	//id AUTO_INCREMENT PRIMARY KEY, username TEXT, email TEXT, password TEXT, name TEXT, surname TEXT, age INT,  phone TEXT, promocode TEXT, status TEXT, roles TEXT, city TEXT, created_at TIMESTAMP, token TEXT, blocked BOOLEAN
+	_, err = db.Exec("CREATE TABLE IF NOT EXISTS users (id Integer Primary Key Generated Always as Identity, username TEXT, email TEXT, password TEXT, name TEXT, surname TEXT, age INT,  phone TEXT, promocode TEXT, status TEXT, roles TEXT, city TEXT, created_at TIMESTAMP, token TEXT, blocked BOOLEAN)")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
