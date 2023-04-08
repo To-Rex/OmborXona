@@ -62,23 +62,34 @@ func checkPasswordHash(password, hash string) bool {
 	return err == nil
 }
 
-func generateToken(username string, password string) (string, error) {
-	//jwt token generate using username and password 
-	
+// func generateToken(username string, password string) (string, error) {
+// 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+// 		"username": username,
+// 		"password": password,
+// 		"created_at": time.Now(),
+// 		"roles": ,
+// 	})
+// 	tokenString, err := token.SignedString([]byte("secret"))
+// 	if err != nil {
+// 		fmt.Println(err)
+// 		return "", err
+// 	}
+// 	return tokenString, nil
+// }
+func generateToken(username string, password string, roles string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"username": username,
 		"password": password,
 		"created_at": time.Now(),
+		"roles": roles,
 	})
 	tokenString, err := token.SignedString([]byte("secret"))
 	if err != nil {
 		fmt.Println(err)
 		return "", err
 	}
-	fmt.Println(tokenString)
 	return tokenString, nil
 }
-
 
 func main() {
 	r := gin.Default()
@@ -254,8 +265,15 @@ func addWarehouse(c *gin.Context) {
 	token = strings.TrimPrefix(token, "Bearer ")
 	claims := jwt.MapClaims{}
 	tkn, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
+		fmt.Println(claims["username"].(string))
 		return []byte("secret"), nil 
 	})
+
+	if (claims["roles"] != "creator") {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "you are not creator"})
+		return
+	}
+	
 	if err != nil {
 		if err == jwt.ErrSignatureInvalid {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
@@ -292,13 +310,17 @@ func addWarehouse(c *gin.Context) {
 	warehouse.Blocked = false
 
 	db := connectDB()
+	_, err = db.Exec("CREATE TABLE IF NOT EXISTS warehouses (id SERIAL PRIMARY KEY, name TEXT, city TEXT, created_at TIMESTAMP, created_by TEXT, status TEXT, blocked BOOLEAN)")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 	var name string
 	err = db.QueryRow("SELECT name FROM warehouses WHERE name = $1", warehouse.Name).Scan(&name)
 	if err == nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "name already exist"})
 		return
 	}
-	//name,city,created_at,created_by,status,blocked
 
 	_, err = db.Exec("INSERT INTO warehouses (name, city, created_at, created_by, status, blocked) VALUES ($1, $2, $3, $4, $5, $6)", warehouse.Name, warehouse.City, warehouse.CreatedAt, warehouse.CreatedBy, warehouse.Status, warehouse.Blocked)
 	if err != nil {
