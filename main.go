@@ -59,7 +59,6 @@ func generateToken(username string, password string) (string, error) {
 		"username": username,
 		"password": password,
 		"created_at": time.Now(),
-		"expired_at": time.Now().Add(time.Hour * 24).Unix(),
 	})
 	tokenString, err := token.SignedString([]byte("secret"))
 	if err != nil {
@@ -102,7 +101,7 @@ func register(c *gin.Context) {
 	}
 
 	db := connectDB()
-	_, err = db.Exec("CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, username VARCHAR(255), email VARCHAR(255), password VARCHAR(255), name VARCHAR(255), surname VARCHAR(255), age INT,  phone VARCHAR(255), promocode VARCHAR(255), status VARCHAR(255), roles VARCHAR(255), city VARCHAR(255), created_at TIMESTAMP, token VARCHAR(255), blocked BOOLEAN)")
+	_, err = db.Exec("CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, username VARCHAR(255), email VARCHAR(255), password VARCHAR(255), name VARCHAR(255), surname VARCHAR(255), age INT,  phone VARCHAR(255), promocode VARCHAR(255), status VARCHAR(255), roles VARCHAR(255), city VARCHAR(255), created_at TIMESTAMP, token TEXT, blocked BOOLEAN)")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -171,20 +170,13 @@ func register(c *gin.Context) {
 }
 
 func login(c *gin.Context) {
-	//post username and password to login 
-	//if User in token == "" generate token else return token
-
 	var user User
 	err := c.BindJSON(&user)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
 	db := connectDB()
-	//post username and password to login 
-	//if User in token == "" generate token else return token
-
 	var username string
 	var password string
 	var token string
@@ -213,12 +205,9 @@ func login(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"token": token})
-	
 }
 
 func logout(c *gin.Context) {
-	//post authotization bearer token user token remove from db
-
 	token := c.GetHeader("Authorization")
 	token = strings.TrimPrefix(token, "Bearer ")
 	claims := jwt.MapClaims{}
@@ -244,7 +233,7 @@ func logout(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
+	
 	c.JSON(http.StatusOK, gin.H{"status": "success"})
 }
 	
