@@ -16,38 +16,38 @@ import (
 const (
 	host     = "containers-us-west-87.railway.app"
 	port     = 7572
-	user	 = "postgres"
+	user     = "postgres"
 	password = "4aMQQl5p9qnUD52lJaaL"
 	dbname   = "railway"
 )
 
 type User struct {
-	ID 	  	    int    `json:"id"`
-	Username    string `json:"username"`
-	Email       string `json:"email"`
-	Password    string `json:"password"`
-	Name        string `json:"name"`
-	Surname     string `json:"surname"`
-	Age         int    `json:"age"`
-	Phone       string `json:"phone"`
-	Promocode   string `json:"promocode"`
-	Status   	string `json:"status"`
-	Roles    	string `json:"roles"`
-	City 	  	string `json:"city"`
-	CreatedAt	time.Time `json:"created_at"`
-	Token    	string `json:"token"`
-	Blocked   	bool `json:"blocked"`
-	WarehouseID int `json:"warehouse_id"`
+	ID          int       `json:"id"`
+	Username    string    `json:"username"`
+	Email       string    `json:"email"`
+	Password    string    `json:"password"`
+	Name        string    `json:"name"`
+	Surname     string    `json:"surname"`
+	Age         int       `json:"age"`
+	Phone       string    `json:"phone"`
+	Promocode   string    `json:"promocode"`
+	Status      string    `json:"status"`
+	Roles       string    `json:"roles"`
+	City        string    `json:"city"`
+	CreatedAt   time.Time `json:"created_at"`
+	Token       string    `json:"token"`
+	Blocked     bool      `json:"blocked"`
+	WarehouseID int       `json:"warehouse_id"`
 }
 
 type Warehouse struct {
-	ID 	  	  int    `json:"id"`
-	Name      string `json:"name"`
-	City 	  string `json:"city"`
+	ID        int       `json:"id"`
+	Name      string    `json:"name"`
+	City      string    `json:"city"`
 	CreatedAt time.Time `json:"created_at"`
-	CreatedBy string `json:"created_by"`
-	Status    string `json:"status"`
-	Blocked   bool `json:"blocked"`
+	CreatedBy string    `json:"created_by"`
+	Status    string    `json:"status"`
+	Blocked   bool      `json:"blocked"`
 }
 
 func passwordHash(password string) string {
@@ -65,10 +65,10 @@ func checkPasswordHash(password, hash string) bool {
 
 func generateToken(username string, password string, roles string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"username": username,
-		"password": password,
+		"username":   username,
+		"password":   password,
 		"created_at": time.Now(),
-		"roles": roles,
+		"roles":      roles,
 	})
 	tokenString, err := token.SignedString([]byte("secret"))
 	if err != nil {
@@ -89,7 +89,7 @@ func main() {
 }
 
 func connectDB() *sql.DB {
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+ "password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
 		panic(err)
@@ -152,7 +152,7 @@ func register(c *gin.Context) {
 		return
 	}
 
-	if  user.Age < 16 {
+	if user.Age < 16 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "age is less than 16"})
 		return
 	}
@@ -162,7 +162,7 @@ func register(c *gin.Context) {
 		return
 	}
 
-	//db in warehouse table in get all id if WarehouseID == warehouse table in list id element in id == WarehouseID create user 
+	//db in warehouse table in get all id if WarehouseID == warehouse table in list id element in id == WarehouseID create user
 	idList := []int{}
 	rows, err := db.Query("SELECT id FROM warehouses")
 	if err != nil {
@@ -178,17 +178,16 @@ func register(c *gin.Context) {
 		}
 		idList = append(idList, id)
 	}
-	//if user.WarehouseID == idList {
-		for _, id := range idList {
-			if user.WarehouseID != id {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "warehouse id is not exist"})
-				return
-			}else {
-				fmt.Println("ok")
-				break
-			}
+	for _, id := range idList {
+		if user.WarehouseID != id {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "warehouse id is not exist"})
+			return
+		} else {
+			fmt.Println("ok")
+			break
 		}
-		
+	}
+
 	var username string
 	err = db.QueryRow("SELECT username FROM users WHERE username = $1", user.Username).Scan(&username)
 	if err == nil {
@@ -227,7 +226,6 @@ func login(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "username or password is incorrect"})
 		return
 	}
-
 
 	if token == "" {
 		token, err = generateToken(username, password, roles)
@@ -271,21 +269,21 @@ func logout(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{"status": "success"})
 }
 
 func addWarehouse(c *gin.Context) {
-	//if such a name exists error else add warehouse to db name, address, phone, city, status, created_at, created_by = username 
+	//if such a name exists error else add warehouse to db name, address, phone, city, status, created_at, created_by = username
 	token := c.GetHeader("Authorization")
 	token = strings.TrimPrefix(token, "Bearer ")
 	claims := jwt.MapClaims{}
-	tkn, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
+	tkn, err := jwt.ParseWithClaims(token, claims, func(_ *jwt.Token) (interface{}, error) {
 		fmt.Println(claims["username"].(string))
-		return []byte("secret"), nil 
+		return []byte("secret"), nil
 	})
 
-	if (claims["roles"] != "boss") {
+	if claims["roles"] != "boss" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "you are not boss"})
 		return
 	}
@@ -346,4 +344,3 @@ func addWarehouse(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"status": "success"})
 }
-	
