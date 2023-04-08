@@ -22,21 +22,22 @@ const (
 )
 
 type User struct {
-	ID 	  	  int    `json:"id"`
-	Username  string `json:"username"`
-	Email     string `json:"email"`
-	Password  string `json:"password"`
-	Name      string `json:"name"`
-	Surname   string `json:"surname"`
-	Age       int    `json:"age"`
-	Phone     string `json:"phone"`
-	Promocode string `json:"promocode"`
-	Status    string `json:"status"`
-	Roles     string `json:"roles"`
-	City 	  string `json:"city"`
-	CreatedAt time.Time `json:"created_at"`
-	Token     string `json:"token"`
-	Blocked   bool `json:"blocked"`
+	ID 	  	    int    `json:"id"`
+	Username    string `json:"username"`
+	Email       string `json:"email"`
+	Password    string `json:"password"`
+	Name        string `json:"name"`
+	Surname     string `json:"surname"`
+	Age         int    `json:"age"`
+	Phone       string `json:"phone"`
+	Promocode   string `json:"promocode"`
+	Status   	string `json:"status"`
+	Roles    	string `json:"roles"`
+	City 	  	string `json:"city"`
+	CreatedAt	time.Time `json:"created_at"`
+	Token    	string `json:"token"`
+	Blocked   	bool `json:"blocked"`
+	WarehouseID int `json:"warehouse_id"`
 }
 
 type Warehouse struct {
@@ -62,20 +63,6 @@ func checkPasswordHash(password, hash string) bool {
 	return err == nil
 }
 
-// func generateToken(username string, password string) (string, error) {
-// 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-// 		"username": username,
-// 		"password": password,
-// 		"created_at": time.Now(),
-// 		"roles": ,
-// 	})
-// 	tokenString, err := token.SignedString([]byte("secret"))
-// 	if err != nil {
-// 		fmt.Println(err)
-// 		return "", err
-// 	}
-// 	return tokenString, nil
-// }
 func generateToken(username string, password string, roles string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"username": username,
@@ -123,7 +110,7 @@ func register(c *gin.Context) {
 	}
 
 	db := connectDB()
-	_, err = db.Exec("CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, username TEXT, email TEXT, password TEXT, name TEXT, surname TEXT, age INT,  phone TEXT, promocode TEXT, status TEXT, roles TEXT, city TEXT, created_at TIMESTAMP, token TEXT, blocked BOOLEAN)")
+	_, err = db.Exec("CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, username TEXT, email TEXT, password TEXT, name TEXT, surname TEXT, age INT,  phone TEXT, promocode TEXT, status TEXT, roles TEXT, city TEXT, created_at TIMESTAMP, token TEXT, blocked BOOLEAN, warehouse_id INT)")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -175,6 +162,33 @@ func register(c *gin.Context) {
 		return
 	}
 
+	//db in warehouse table in get all id if WarehouseID == warehouse table in list id element in id == WarehouseID create user 
+	idList := []int{}
+	rows, err := db.Query("SELECT id FROM warehouses")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	for rows.Next() {
+		var id int
+		err = rows.Scan(&id)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		idList = append(idList, id)
+	}
+	//if user.WarehouseID == idList {
+		for _, id := range idList {
+			if user.WarehouseID != id {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "warehouse id is not exist"})
+				return
+			}else {
+				fmt.Println("ok")
+				break
+			}
+		}
+		
 	var username string
 	err = db.QueryRow("SELECT username FROM users WHERE username = $1", user.Username).Scan(&username)
 	if err == nil {
@@ -182,7 +196,7 @@ func register(c *gin.Context) {
 		return
 	}
 
-	_, err = db.Exec("INSERT INTO users (username, email, password, name, surname, age, phone, promocode, status, roles, city, created_at, token, blocked) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)", user.Username, user.Email, passwordHash(user.Password), user.Name, user.Surname, user.Age, user.Phone, user.Promocode, user.Status, user.Roles, user.City, user.CreatedAt, user.Token, user.Blocked)
+	_, err = db.Exec("INSERT INTO users (username, email, password, name, surname, age, phone, promocode, status, roles, city, created_at, token, blocked, warehouse_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)", user.Username, user.Email, passwordHash(user.Password), user.Name, user.Surname, user.Age, user.Phone, user.Promocode, user.Status, user.Roles, user.City, user.CreatedAt, user.Token, user.Blocked, user.WarehouseID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -202,6 +216,7 @@ func login(c *gin.Context) {
 	var username string
 	var password string
 	var token string
+	var roles string
 	err = db.QueryRow("SELECT username, password, token FROM users WHERE username = $1", user.Username).Scan(&username, &password, &token)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "username or password is incorrect"})
@@ -213,8 +228,9 @@ func login(c *gin.Context) {
 		return
 	}
 
+
 	if token == "" {
-		token, err = generateToken(username, password)
+		token, err = generateToken(username, password, roles)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
@@ -269,11 +285,11 @@ func addWarehouse(c *gin.Context) {
 		return []byte("secret"), nil 
 	})
 
-	if (claims["roles"] != "creator") {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "you are not creator"})
+	if (claims["roles"] != "boss") {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "you are not boss"})
 		return
 	}
-	
+
 	if err != nil {
 		if err == jwt.ErrSignatureInvalid {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
