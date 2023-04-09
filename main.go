@@ -108,16 +108,15 @@ func checkPasswordHash(password, hash string) bool {						//parolni tekshirish
 	return err == nil														//agar xato bo'lmasa true qaytaradi
 }
 
-func generateToken(username string, password string, roles string) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"username": username,
+func generateToken(username string, password string, roles string) (string, error) {	//token yaratish
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{					//token yaratish
+		"username": username,	
 		"password": password,
 		"created_at": time.Now(),
 		"roles": roles,
 	})
-	tokenString, err := token.SignedString([]byte("secret"))
+	tokenString, err := token.SignedString([]byte("secret"))							//tokenni shifrlash
 	if err != nil {
-		fmt.Println(err)
 		return "", err
 	}
 	return tokenString, nil
@@ -125,25 +124,25 @@ func generateToken(username string, password string, roles string) (string, erro
 
 func main() {
 	r := gin.Default()
-	r.POST("/register", register)
-	r.POST("/login", login)
-	r.POST("/logout", logout)
-	r.POST("/addWarehouse", addWarehouse)
-	r.POST("/addCategory", addCategory)
-	r.Run()
+	r.POST("/register", register)			//Ro'yxatdan o'tish
+	r.POST("/login", login)					//Kirish
+	r.POST("/logout", logout)				//Chiqish
+	r.POST("/addWarehouse", addWarehouse)	//Ombor qo'shish
+	r.POST("/addCategory", addCategory)		//Kategoriya qo'shish
+	r.Run()									//Serverni ishga tushirish
 }
 
-func connectDB() *sql.DB {
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+ "password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
-	db, err := sql.Open("postgres", psqlInfo)
+func connectDB() *sql.DB {						//Dastur bilan bazaga ulanish
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+ "password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)	//bazaga ulanish uchun ma'lumotlar
+	db, err := sql.Open("postgres", psqlInfo)	//bazaga ulanish
 	if err != nil {
 		panic(err)
 	}
-	err = db.Ping()
+	err = db.Ping()								//bazaga ulanishni tekshirish
 	if err != nil {
 		panic(err)
 	}
-	return db
+	return db									//bazaga ulanishni qaytarish
 }
 
 func register(c *gin.Context) {
