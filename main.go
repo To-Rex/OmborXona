@@ -14,76 +14,98 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-const (
-	host     = "containers-us-west-87.railway.app"
-	port     = 7572
-	user	 = "postgres"
-	password = "4aMQQl5p9qnUD52lJaaL"
-	dbname   = "railway"
+const (	//baza bilan bog'lanish uchun
+	host     = "containers-us-west-87.railway.app" 		//host
+	port     = 7572										//port
+	user	 = "postgres"								//foydalanuvchi
+	password = "4aMQQl5p9qnUD52lJaaL"					//parol
+	dbname   = "railway"								//baza nomi
 )
 
-type User struct {
-	ID 	  	    int      `json:"id"`
-	Username    string	 `json:"username"`
-	Email       string	 `json:"email"`
-	Password    string	 `json:"password"`
-	Name        string	 `json:"name"`
-	Surname     string	 `json:"surname"`
-	Age         int      `json:"age"`
-	Phone       string   `json:"phone"`
-	Promocode   string	 `json:"promocode"`
-	Status   	string	 `json:"status"`
-	Roles    	string	 `json:"roles"`
-	City 	  	string	 `json:"city"`
-	CreatedAt	time.Time `json:"created_at"`
-	Token    	string	 `json:"token"`
-	Blocked   	bool 	 `json:"blocked"`
-	WarehouseID int		 `json:"warehouse_id"`
+type User struct {	//foydalanuvchi
+	ID 	  	    int       `json:"id"`			//id
+	Username    string	  `json:"username"`		//login
+	Email       string	  `json:"email"`		//email
+	Password    string	  `json:"password"`		//parol
+	Name        string	  `json:"name"`			//ismi
+	Surname     string	  `json:"surname"`		//familiyasi
+	Age         int       `json:"age"`			//yoshi
+	Phone       string    `json:"phone"`		//telefon raqami
+	Promocode   string	  `json:"promocode"`	//promokod
+	Status   	string	  `json:"status"`		//holati
+	Roles    	string	  `json:"roles"`		//roli
+	City 	  	string	  `json:"city"`			//shahri
+	CreatedAt	time.Time `json:"created_at"`	//yaratilgan vaqti
+	Token    	string	  `json:"token"`		//tokeni
+	Blocked   	bool 	  `json:"blocked"`		//bloklanganmi
+	WarehouseID int		  `json:"warehouse_id"` //ombor id
 }
 
-type Warehouse struct {
-	ID 	  	  int   	 `json:"id"`
-	Name      string 	 `json:"name"`
-	City 	  string	 `json:"city"`
-	CreatedAt time.Time  `json:"created_at"`
-	CreatedBy string	 `json:"created_by"`
-	Status    string	 `json:"status"`
-	Blocked   bool 		 `json:"blocked"`
+type Warehouse struct {			//ombor
+	ID 	  	  int   	 `json:"id"`			//id
+	Name      string 	 `json:"name"`			//nomi
+	City 	  string	 `json:"city"`			//shahri
+	CreatedAt time.Time  `json:"created_at"`	//yaratilgan vaqti
+	CreatedBy string	 `json:"created_by"`	//yaratgan foydalanuvchi
+	Status    string	 `json:"status"`		//holati
+	Blocked   bool 		 `json:"blocked"`		//bloklanganmi
 }
 
-type Category struct {
-	ID 	  	  		int    		`json:"id"`
-	CatID     		string         `json:"cat_id"`
-	Name     		string 		`json:"name"`
-	Description 	string	    `json:"description"`
-	CreatedAt 		time.Time   `json:"created_at"`
-	CreatedBy 		string      `json:"created_by"`
-	Status    		string      `json:"status"`
-	WarehouseID 	int 		`json:"warehouse_id"`
+type Category struct {	//kategoriyalar
+	ID 	  	  		int    		`json:"id"`			 //id
+	CatID     		string      `json:"cat_id"`		 //kategoriyasi
+	Name     		string 		`json:"name"`		 //nomi
+	Description 	string	    `json:"description"` //eslatma
+	CreatedAt 		time.Time   `json:"created_at"`	 //yaratilgan vaqti
+	CreatedBy 		string      `json:"created_by"`	 //yaratgan foydalanuvchi
+	Status    		string      `json:"status"`		 //holati
+	WarehouseID 	int 		`json:"warehouse_id"`//qaysi omborda
 }
 
-func generateUserId() string {
-	rand.Seed(time.Now().UnixNano())
-	chars := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
-	length := 32
-	b := make([]rune, length)
-	for i := range b {
-		b[i] = chars[rand.Intn(len(chars))]
+type Product struct {	//mahsulot
+	ID 	  	  		int    		`json:"id"`		 	 //id
+	CatID 			string		`json:"cat_id"` 	 //kategoriyasi
+	ProductID     	string      `json:"product_id"`  //mahsulot id
+	WarehouseID 	float64 	`json:"warehouse_id"`//qaysi omborda
+	Name     		string 		`json:"name"`		 //nomi
+	Description 	string	    `json:"description"` //eslatma
+	Price 			float64		`json:"price"`       //sotish narxi
+	Benicifits 		float64		`json:"benicifits"`  //foydasi
+	Discount 		float64		`json:"discount"`    //skidka
+	Currency 		string		`json:"currency"`    //valyuta
+	Quantity 		float64		`json:"quantity"`    //miqdori
+	Measurement 	string		`json:"measurement"` //o'lchov birligi
+	Parts 			string		`json:"parts"`		 //qismi - partiya
+	Barcode 		string		`json:"barcode"` 	 //barkod
+	Brand 			string		`json:"brand"`		 //brendi
+	Type 			string		`json:"type"`  		 //turi - tipi
+	CreatedAt 		time.Time   `json:"created_at"`	 //yaratilgan vaqti
+	CreatedBy 		string      `json:"created_by"`	 //yaratgan foydalanuvchi
+	Status    		string      `json:"status"`		 //holati
+}
+
+func generateUserId() string {					//yangi shifrlangan id yaratish
+	rand.Seed(time.Now().UnixNano())			//random raqam yaratish
+	chars := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")	//harflar
+	length := 32								//uzunligi	
+	b := make([]rune, length)					//uzunlikdagi massiv
+	for i := range b {							//massivni to'ldirish
+		b[i] = chars[rand.Intn(len(chars))]		//harflardan random tanlash
 	}
-	return string(b)
+	return string(b)							//stringga o'tkazish
 }
 
-func passwordHash(password string) string {
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), 10)
+func passwordHash(password string) string {							//parolni shifrlash
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), 10)	//parolni shifrlash
 	if err != nil {
 		fmt.Println(err)
 	}
 	return string(hash)
 }
 
-func checkPasswordHash(password, hash string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	return err == nil
+func checkPasswordHash(password, hash string) bool {						//parolni tekshirish
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))	//parolni tekshirish
+	return err == nil														//agar xato bo'lmasa true qaytaradi
 }
 
 func generateToken(username string, password string, roles string) (string, error) {
@@ -434,5 +456,4 @@ func addCategory(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "success"})
-
 }
