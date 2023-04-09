@@ -13,7 +13,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-const ( //baza bilan bog'lanish uchun
+const (			 //baza bilan bog'lanish uchun
 	host     = "containers-us-west-87.railway.app" //host
 	port     = 7572                                //port
 	user     = "postgres"                          //foydalanuvchi
@@ -22,22 +22,22 @@ const ( //baza bilan bog'lanish uchun
 )
 
 type User struct { //foydalanuvchi
-	ID          int       `json:"id"`           //id												1
-	Username    string    `json:"username"`     //login												2
-	Email       string    `json:"email"`        //email												3
-	Password    string    `json:"password"`     //parol												4
-	Name        string    `json:"name"`         //ismi												5
-	Surname     string    `json:"surname"`      //familiyasi										6
-	Age         int       `json:"age"`          //yoshi												7
-	Phone       string    `json:"phone"`        //telefon raqami									8
-	Promocode   string    `json:"promocode"`    //promokod											9
-	Status      string    `json:"status"`       //holati											10
-	Roles       string    `json:"roles"`        //roli												11
-	City        string    `json:"city"`         //shahri											12
-	CreatedAt   time.Time `json:"created_at"`   //yaratilgan vaqti									13
-	Token       string    `json:"token"`        //tokeni											14
-	Blocked     bool      `json:"blocked"`      //bloklanganmi										15
-	WarehouseID int       `json:"warehouse_id"` //ombor id											16
+	ID          int       `json:"id"`           //id											1
+	Username    string    `json:"username"`     //login											2
+	Email       string    `json:"email"`        //email											3
+	Password    string    `json:"password"`     //parol											4
+	Name        string    `json:"name"`         //ismi											5
+	Surname     string    `json:"surname"`      //familiyasi									6
+	Age         int       `json:"age"`          //yoshi											7
+	Phone       string    `json:"phone"`        //telefon raqami								8
+	Promocode   string    `json:"promocode"`    //promokod										9
+	Status      string    `json:"status"`       //holati										10
+	Roles       string    `json:"roles"`        //roli											11
+	City        string    `json:"city"`         //shahri										12
+	CreatedAt   time.Time `json:"created_at"`   //yaratilgan vaqti								13
+	Token       string    `json:"token"`        //tokeni										14
+	Blocked     bool      `json:"blocked"`      //bloklanganmi									15
+	WarehouseID int       `json:"warehouse_id"` //ombor id										16
 }
 
 type Warehouse struct { //ombor
