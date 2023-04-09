@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"strings"
 	"time"
@@ -22,32 +23,54 @@ const (
 )
 
 type User struct {
-	ID 	  	    int    `json:"id"`
-	Username    string `json:"username"`
-	Email       string `json:"email"`
-	Password    string `json:"password"`
-	Name        string `json:"name"`
-	Surname     string `json:"surname"`
-	Age         int    `json:"age"`
-	Phone       string `json:"phone"`
-	Promocode   string `json:"promocode"`
-	Status   	string `json:"status"`
-	Roles    	string `json:"roles"`
-	City 	  	string `json:"city"`
+	ID 	  	    int      `json:"id"`
+	Username    string	 `json:"username"`
+	Email       string	 `json:"email"`
+	Password    string	 `json:"password"`
+	Name        string	 `json:"name"`
+	Surname     string	 `json:"surname"`
+	Age         int      `json:"age"`
+	Phone       string   `json:"phone"`
+	Promocode   string	 `json:"promocode"`
+	Status   	string	 `json:"status"`
+	Roles    	string	 `json:"roles"`
+	City 	  	string	 `json:"city"`
 	CreatedAt	time.Time `json:"created_at"`
-	Token    	string `json:"token"`
-	Blocked   	bool `json:"blocked"`
-	WarehouseID int `json:"warehouse_id"`
+	Token    	string	 `json:"token"`
+	Blocked   	bool 	 `json:"blocked"`
+	WarehouseID int		 `json:"warehouse_id"`
 }
 
 type Warehouse struct {
-	ID 	  	  int    `json:"id"`
-	Name      string `json:"name"`
-	City 	  string `json:"city"`
-	CreatedAt time.Time `json:"created_at"`
-	CreatedBy string `json:"created_by"`
-	Status    string `json:"status"`
-	Blocked   bool `json:"blocked"`
+	ID 	  	  int   	 `json:"id"`
+	Name      string 	 `json:"name"`
+	City 	  string	 `json:"city"`
+	CreatedAt time.Time  `json:"created_at"`
+	CreatedBy string	 `json:"created_by"`
+	Status    string	 `json:"status"`
+	Blocked   bool 		 `json:"blocked"`
+}
+
+type Category struct {
+	ID 	  	  		int    		`json:"id"`
+	CatID     		string         `json:"cat_id"`
+	Name     		string 		`json:"name"`
+	Description 	string	    `json:"description"`
+	CreatedAt 		time.Time   `json:"created_at"`
+	CreatedBy 		string      `json:"created_by"`
+	Status    		string      `json:"status"`
+	WarehouseID 	int 		`json:"warehouse_id"`
+}
+
+func generateUserId() string {
+	rand.Seed(time.Now().UnixNano())
+	chars := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+	length := 32
+	b := make([]rune, length)
+	for i := range b {
+		b[i] = chars[rand.Intn(len(chars))]
+	}
+	return string(b)
 }
 
 func passwordHash(password string) string {
@@ -63,20 +86,6 @@ func checkPasswordHash(password, hash string) bool {
 	return err == nil
 }
 
-// func generateToken(username string, password string) (string, error) {
-// 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-// 		"username": username,
-// 		"password": password,
-// 		"created_at": time.Now(),
-// 		"roles": ,
-// 	})
-// 	tokenString, err := token.SignedString([]byte("secret"))
-// 	if err != nil {
-// 		fmt.Println(err)
-// 		return "", err
-// 	}
-// 	return tokenString, nil
-// }
 func generateToken(username string, password string, roles string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"username": username,
@@ -98,7 +107,7 @@ func main() {
 	r.POST("/login", login)
 	r.POST("/logout", logout)
 	r.POST("/addWarehouse", addWarehouse)
-
+	r.POST("/addCategory", addCategory)
 	r.Run()
 }
 
@@ -361,4 +370,71 @@ func addWarehouse(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"status": "success"})
 }
-	
+
+func addCategory(c *gin.Context) {
+	token := c.GetHeader("Authorization")
+	token = strings.TrimPrefix(token, "Bearer ")
+	claims := jwt.MapClaims{}
+	tkn, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
+		fmt.Println(claims["username"].(string))
+		return []byte("secret"), nil 
+	} )
+
+	if (claims["roles"] != "boss"){
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "you are not creator or boss"})
+		return
+	}
+
+	if err != nil {
+		if err == jwt.ErrSignatureInvalid {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+			return
+		}
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !tkn.Valid {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	var category Category
+	err = c.BindJSON(&category)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if category.Name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "name is empty"})
+		return
+	}
+	category.CatID = generateUserId() 
+	category.CreatedAt = time.Now()
+	category.CreatedBy = claims["username"].(string)
+	category.Status = "active"
+
+	db := connectDB()
+	_, err = db.Exec("CREATE TABLE IF NOT EXISTS categories (id SERIAL PRIMARY KEY, cat_id TEXT, name TEXT, description TEXT, created_at TIMESTAMP, created_by TEXT, status TEXT, warehouse_id INT)")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	var name string
+	var warehouse_id int
+	//if db in name if any and warehouse_id and row in warehouse_id available return error
+	err = db.QueryRow("SELECT name, warehouse_id FROM categories WHERE name = $1 AND warehouse_id = $2", category.Name, category.WarehouseID).Scan(&name, &warehouse_id)
+	if err == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "name already exist"})
+		return
+	}
+
+	_, err = db.Exec("INSERT INTO categories (cat_id, name, description, created_at, created_by, status, warehouse_id) VALUES ($1, $2, $3, $4, $5, $6, $7)", category.CatID, category.Name, category.Description, category.CreatedAt, category.CreatedBy, category.Status, category.WarehouseID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "success"})
+
+}
