@@ -41,13 +41,13 @@ type User struct { //foydalanuvchi
 }
 
 type Warehouse struct { //ombor
-	ID        int       `json:"id"`         //id												1
-	Name      string    `json:"name"`       //nomi												2
-	City      string    `json:"city"`       //shahri											3
-	CreatedAt time.Time `json:"created_at"` //yaratilgan vaqti									4
-	CreatedBy string    `json:"created_by"` //yaratgan foydalanuvchi							5
-	Status    string    `json:"status"`     //holati											6
-	Blocked   bool      `json:"blocked"`    //bloklanganmi										7
+	ID        int       `json:"id"`        		//id											1
+	Name      string    `json:"name"`      		//nomi											2
+	City      string    `json:"city"`     		//shahri										3
+	CreatedAt time.Time `json:"created_at"`		//yaratilgan vaqti								4
+	CreatedBy string    `json:"created_by"` 	//yaratgan foydalanuvchi						5
+	Status    string    `json:"status"`    		//holati										6
+	Blocked   bool      `json:"blocked"`   		//bloklanganmi									7
 }
 
 type Category struct { //kategoriyalar
@@ -64,6 +64,97 @@ type Category struct { //kategoriyalar
 type Product struct { //mahsulot
 	ID          int       `json:"id"`           //id 											1
 	CatID       string    `json:"cat_id"`       //kategoriyasi									2
+	ProductID   string    `json:"product_id"`   //mahsulot id									3
+	WarehouseID float64   `json:"warehouse_id"` //qaysi omborda									4
+	Name        string    `json:"name"`         //nomi											5
+	Description string    `json:"description"`  //eslatma										6
+	Picture     string    `json:"picture"`      //rasmi											7
+	Cauntry     string    `json:"cauntry"`      //mamlakati										8
+	Code        float64   `json:"code"`         //kodi											9
+	Price       float64   `json:"price"`        //sotish narxi									10
+	Benicifits  float64   `json:"benicifits"`   //foydasi										11
+	Discount    float64   `json:"discount"`     //skidka										12
+	Currency    string    `json:"currency"`     //valyuta										13
+	Quantity    float64   `json:"quantity"`     //miqdori										14
+	Guarantee   float64   `json:"guarantee"`    //garantiya										15
+	Measurement string    `json:"measurement"`  //o'lchov birligi - soni						16
+	Parts       string    `json:"parts"`        //qismi - partiya								17
+	Barcode     string    `json:"barcode"`      //barkod										18
+	Brand       string    `json:"brand"`        //brendi										19
+	Type        string    `json:"type"`         //turi - tipi									20
+	CreatedAt   time.Time `json:"created_at"`   //yaratilgan vaqti								21
+	CreatedBy   string    `json:"created_by"`   //yaratgan foydalanuvchi						22
+	Status      string    `json:"status"`       //holati										23
+}
+
+type Order struct { //buyurtmalar
+	ID          int       `json:"id"`           //id											1
+	OrderID     string    `json:"order_id"`     //buyurtma id									2
+	ProductID   string    `json:"product_id"`   //mahsulot id									3
+	WarehouseID float64   `json:"warehouse_id"` //qaysi omborda									4
+	Quantity    float64   `json:"quantity"`     //miqdori										5
+	Price       float64   `json:"price"`        //narxi											6
+	Currency    string    `json:"currency"`     //valyuta										7
+	Discount    float64   `json:"discount"`     //skidka			
+	Country     string    `json:"country"`      //mamlakati										9
+	Code 	  	float64   `json:"code"`         //kodi											10
+	Barcode     string    `json:"barcode"`      //barkod										11
+	Brand       string    `json:"brand"`        //brendi										12
+	Type        string    `json:"type"`         //turi - tipi									13
+	CreatedAt   time.Time `json:"created_at"`   //yaratilgan vaqti								14
+	CreatedBy   string    `json:"created_by"`   //yaratgan foydalanuvchi						15
+	Status      string    `json:"status"`       //holati										16
+}
+
+type OrderHistory struct { //buyurtma tarixi
+	ID          int       `json:"id"`           //id											1
+	OrderID     string    `json:"order_id"`     //buyurtma id									2
+	ProductID   string    `json:"product_id"`   //mahsulot id									3
+	WarehouseID float64   `json:"warehouse_id"` //qaysi omborda									4
+	Quantity    float64   `json:"quantity"`     //miqdori										5
+	Price       float64   `json:"price"`        //narxi											6
+	Currency    string    `json:"currency"`     //valyuta										7
+	Discount    float64   `json:"discount"`     //skidka
+	Country     string    `json:"country"`      //mamlakati										9
+	Code 	  	float64   `json:"code"`         //kodi											10
+	Barcode     string    `json:"barcode"`      //barkod										11
+	Brand       string    `json:"brand"`        //brendi										12
+	Type        string    `json:"type"`         //turi - tipi									13
+	CreatedAt   time.Time `json:"created_at"`   //yaratilgan vaqti								14
+	CreatedBy   string    `json:"created_by"`   //yaratgan foydalanuvchi						15
+	Status      string    `json:"status"`       //holati										16
+}
+
+type ProductHistory struct { //mahsulot tarixi
+	ID          int       `json:"id"`           //id 											1
+	CatID       string    `json:"cat_id"`       //kategoriyasi									2
+	ProductID   string    `json:"product_id"`   //mahsulot id									3
+	WarehouseID float64   `json:"warehouse_id"` //qaysi omborda									4
+	Name        string    `json:"name"`         //nomi											5
+	Description string    `json:"description"`  //eslatma										6
+	Picture     string    `json:"picture"`      //rasmi											7
+	Cauntry     string    `json:"cauntry"`      //mamlakati										8
+	Code        float64   `json:"code"`         //kodi											9
+	Price       float64   `json:"price"`        //sotish narxi									10
+	Benicifits  float64   `json:"benicifits"`   //foydasi										11
+	Discount    float64   `json:"discount"`     //skidka										12
+	Currency    string    `json:"currency"`     //valyuta										13
+	Quantity    float64   `json:"quantity"`     //miqdori										14
+	Guarantee   float64   `json:"guarantee"`    //garantiya										15
+	Measurement string    `json:"measurement"`  //o'lchov birligi - soni						16
+	Parts       string    `json:"parts"`        //qismi - partiya								17
+	Barcode     string    `json:"barcode"`      //barkod										18
+	Brand       string    `json:"brand"`        //brendi										19
+	Type        string    `json:"type"`         //turi - tipi									20
+	CreatedAt   time.Time `json:"created_at"`   //yaratilgan vaqti								21
+	CreatedBy   string    `json:"created_by"`   //yaratgan foydalanuvchi						22
+	Status      string    `json:"status"`       //holati										23
+}
+
+//hisobotlar jami yuklar kirishi va chiqishi foydalar va zararlari 
+type Report struct { //hisobotlar
+	ID          int       `json:"id"`           //id											1
+	ReportID    string    `json:"report_id"`    //hisobot id									2
 	ProductID   string    `json:"product_id"`   //mahsulot id									3
 	WarehouseID float64   `json:"warehouse_id"` //qaysi omborda									4
 	Name        string    `json:"name"`         //nomi											5
