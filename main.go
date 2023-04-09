@@ -14,7 +14,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-const (	//baza bilan bog'lanish uchun
+const (							//baza bilan bog'lanish uchun
 	host     = "containers-us-west-87.railway.app" 		//host
 	port     = 7572										//port
 	user	 = "postgres"								//foydalanuvchi
@@ -22,66 +22,70 @@ const (	//baza bilan bog'lanish uchun
 	dbname   = "railway"								//baza nomi
 )
 
-type User struct {	//foydalanuvchi
-	ID 	  	    int       `json:"id"`			//id
-	Username    string	  `json:"username"`		//login
-	Email       string	  `json:"email"`		//email
-	Password    string	  `json:"password"`		//parol
-	Name        string	  `json:"name"`			//ismi
-	Surname     string	  `json:"surname"`		//familiyasi
-	Age         int       `json:"age"`			//yoshi
-	Phone       string    `json:"phone"`		//telefon raqami
-	Promocode   string	  `json:"promocode"`	//promokod
-	Status   	string	  `json:"status"`		//holati
-	Roles    	string	  `json:"roles"`		//roli
-	City 	  	string	  `json:"city"`			//shahri
-	CreatedAt	time.Time `json:"created_at"`	//yaratilgan vaqti
-	Token    	string	  `json:"token"`		//tokeni
-	Blocked   	bool 	  `json:"blocked"`		//bloklanganmi
-	WarehouseID int		  `json:"warehouse_id"` //ombor id
+type User struct {				//foydalanuvchi
+	ID 	  	    int       `json:"id"`			//id												1
+	Username    string	  `json:"username"`		//login												2		
+	Email       string	  `json:"email"`		//email												3			
+	Password    string	  `json:"password"`		//parol												4			
+	Name        string	  `json:"name"`			//ismi												5
+	Surname     string	  `json:"surname"`		//familiyasi										6			
+	Age         int       `json:"age"`			//yoshi												7			
+	Phone       string    `json:"phone"`		//telefon raqami									8
+	Promocode   string	  `json:"promocode"`	//promokod											9			
+	Status   	string	  `json:"status"`		//holati											10
+	Roles    	string	  `json:"roles"`		//roli												11				
+	City 	  	string	  `json:"city"`			//shahri											12
+	CreatedAt	time.Time `json:"created_at"`	//yaratilgan vaqti									13	
+	Token    	string	  `json:"token"`		//tokeni											14		
+	Blocked   	bool 	  `json:"blocked"`		//bloklanganmi										15
+	WarehouseID int		  `json:"warehouse_id"` //ombor id											16
 }
 
 type Warehouse struct {			//ombor
-	ID 	  	  int   	 `json:"id"`			//id
-	Name      string 	 `json:"name"`			//nomi
-	City 	  string	 `json:"city"`			//shahri
-	CreatedAt time.Time  `json:"created_at"`	//yaratilgan vaqti
-	CreatedBy string	 `json:"created_by"`	//yaratgan foydalanuvchi
-	Status    string	 `json:"status"`		//holati
-	Blocked   bool 		 `json:"blocked"`		//bloklanganmi
+	ID 	  	  int   	 `json:"id"`			//id												1
+	Name      string 	 `json:"name"`			//nomi												2
+	City 	  string	 `json:"city"`			//shahri											3
+	CreatedAt time.Time  `json:"created_at"`	//yaratilgan vaqti									4
+	CreatedBy string	 `json:"created_by"`	//yaratgan foydalanuvchi							5
+	Status    string	 `json:"status"`		//holati											6
+	Blocked   bool 		 `json:"blocked"`		//bloklanganmi										7
 }
 
-type Category struct {	//kategoriyalar
-	ID 	  	  		int    		`json:"id"`			 //id
-	CatID     		string      `json:"cat_id"`		 //kategoriyasi
-	Name     		string 		`json:"name"`		 //nomi
-	Description 	string	    `json:"description"` //eslatma
-	CreatedAt 		time.Time   `json:"created_at"`	 //yaratilgan vaqti
-	CreatedBy 		string      `json:"created_by"`	 //yaratgan foydalanuvchi
-	Status    		string      `json:"status"`		 //holati
-	WarehouseID 	int 		`json:"warehouse_id"`//qaysi omborda
+type Category struct {			//kategoriyalar
+	ID 	  	  		int    		`json:"id"`			 //id											1
+	CatID     		string      `json:"cat_id"`		 //kategoriyasi									2
+	Name     		string 		`json:"name"`		 //nomi											3			
+	Description 	string	    `json:"description"` //eslatma										4
+	CreatedAt 		time.Time   `json:"created_at"`	 //yaratilgan vaqti								5	
+	CreatedBy 		string      `json:"created_by"`	 //yaratgan foydalanuvchi						6
+	Status    		string      `json:"status"`		 //holati										7				
+	WarehouseID 	int 		`json:"warehouse_id"`//qaysi omborda								8
 }
 
-type Product struct {	//mahsulot
-	ID 	  	  		int    		`json:"id"`		 	 //id
-	CatID 			string		`json:"cat_id"` 	 //kategoriyasi
-	ProductID     	string      `json:"product_id"`  //mahsulot id
-	WarehouseID 	float64 	`json:"warehouse_id"`//qaysi omborda
-	Name     		string 		`json:"name"`		 //nomi
-	Description 	string	    `json:"description"` //eslatma
-	Price 			float64		`json:"price"`       //sotish narxi
-	Benicifits 		float64		`json:"benicifits"`  //foydasi
-	Discount 		float64		`json:"discount"`    //skidka
-	Currency 		string		`json:"currency"`    //valyuta
-	Quantity 		float64		`json:"quantity"`    //miqdori
-	Measurement 	string		`json:"measurement"` //o'lchov birligi
-	Parts 			string		`json:"parts"`		 //qismi - partiya
-	Barcode 		string		`json:"barcode"` 	 //barkod
-	Brand 			string		`json:"brand"`		 //brendi
-	Type 			string		`json:"type"`  		 //turi - tipi
-	CreatedAt 		time.Time   `json:"created_at"`	 //yaratilgan vaqti
-	CreatedBy 		string      `json:"created_by"`	 //yaratgan foydalanuvchi
-	Status    		string      `json:"status"`		 //holati
+type Product struct {			//mahsulot
+	ID 	  	  		int    		`json:"id"`		 	 //id 											1
+	CatID 			string		`json:"cat_id"` 	 //kategoriyasi									2
+	ProductID     	string      `json:"product_id"`  //mahsulot id									3			
+	WarehouseID 	float64 	`json:"warehouse_id"`//qaysi omborda								4	
+	Name     		string 		`json:"name"`		 //nomi											5		
+	Description 	string	    `json:"description"` //eslatma										6	
+	Picture 		string		`json:"picture"`	 //rasmi										7		
+	Cauntry 		string		`json:"cauntry"`	 //mamlakati									8	
+	Code 			float64		`json:"code"`		 //kodi											9		
+	Price 			float64		`json:"price"`       //sotish narxi									10
+	Benicifits 		float64		`json:"benicifits"`  //foydasi										11			
+	Discount 		float64		`json:"discount"`    //skidka										12			
+	Currency 		string		`json:"currency"`    //valyuta										13	
+	Quantity 		float64		`json:"quantity"`    //miqdori										14		
+	Guarantee 		float64		`json:"guarantee"`   //garantiya									15			
+	Measurement 	string		`json:"measurement"` //o'lchov birligi - soni						16	
+	Parts 			string		`json:"parts"`		 //qismi - partiya								17		
+	Barcode 		string		`json:"barcode"` 	 //barkod										18	
+	Brand 			string		`json:"brand"`		 //brendi										19	
+	Type 			string		`json:"type"`  		 //turi - tipi									20
+	CreatedAt 		time.Time   `json:"created_at"`	 //yaratilgan vaqti								21
+	CreatedBy 		string      `json:"created_by"`	 //yaratgan foydalanuvchi						22
+	Status    		string      `json:"status"`		 //holati										23
 }
 
 func generateUserId() string {					//yangi shifrlangan id yaratish
