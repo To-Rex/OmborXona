@@ -145,87 +145,89 @@ func connectDB() *sql.DB {						//Dastur bilan bazaga ulanish
 	return db									//bazaga ulanishni qaytarish
 }
 
-func register(c *gin.Context) {
-	var user User
-	err := c.BindJSON(&user)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+func register(c *gin.Context) {					//Ro'yxatdan o'tish
+	var user User								//user modeli
+	err := c.BindJSON(&user)					//jsonni user modeliga o'tkazish
+	if err != nil {								//agar xato bo'lsa			
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})	//xatoni qaytarish
+		return									//dasturdan chiqish
 	}
 
-	db := connectDB()
+	db := connectDB()							//bazaga ulanish
+	//users jadvalini yaratish =>
 	_, err = db.Exec("CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, username TEXT, email TEXT, password TEXT, name TEXT, surname TEXT, age INT,  phone TEXT, promocode TEXT, status TEXT, roles TEXT, city TEXT, created_at TIMESTAMP, token TEXT, blocked BOOLEAN, warehouse_id INT)")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	user.Promocode = ""
-	user.Status = "active"
-	user.Roles = "user"
-	user.CreatedAt = time.Now()
-	user.Token = " "
-	user.Blocked = false
+	user.Promocode = ""							//promokodni bo'sh qilish
+	user.Status = "active"						//statusni faol qilish
+	user.Roles = "user"							//roli foydalanuvchi qilish
+	user.CreatedAt = time.Now()					//yaratilgan vaqtni yozish
+	user.Token = " "							//tokenni bo'sh qilish
+	user.Blocked = false						//bloklanganligini false qilish
 
-	if user.Username == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "username is empty"})
+	if user.Username == "" {					//agar username bo'sh bo'lsa
+		c.JSON(http.StatusBadRequest, gin.H{"error": "username is empty"})	//xatoni qaytarish
 		return
 	}
-	if user.Email == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "email is empty"})
+	if user.Email == "" {						//agar email bo'sh bo'lsa
+		c.JSON(http.StatusBadRequest, gin.H{"error": "email is empty"})		//xatoni qaytarish
 		return
 	}
-	if user.Password == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "password is empty"})
+	if user.Password == "" {					//agar parol bo'sh bo'lsa
+		c.JSON(http.StatusBadRequest, gin.H{"error": "password is empty"})	//xatoni qaytarish
 		return
 	}
-	if user.Name == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "name is empty"})
+	if user.Name == "" {						//agar ism bo'sh bo'lsa
+		c.JSON(http.StatusBadRequest, gin.H{"error": "name is empty"})		//xatoni qaytarish
 		return
 	}
-	if user.Surname == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "surname is empty"})
+	if user.Surname == "" {						//agar familiya bo'sh bo'lsa
+		c.JSON(http.StatusBadRequest, gin.H{"error": "surname is empty"})	//xatoni qaytarish
 		return
 	}
-	if user.Phone == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "phone is empty"})
-		return
-	}
-
-	if user.Age == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "age is empty"})
+	if user.Phone == "" {						//agar telefon raqami bo'sh bo'lsa
+		c.JSON(http.StatusBadRequest, gin.H{"error": "phone is empty"})		//xatoni qaytarish
 		return
 	}
 
-	if  user.Age < 16 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "age is less than 16"})
+	if user.Age == 0 {							//agar yosh bo'sh bo'lsa
+		c.JSON(http.StatusBadRequest, gin.H{"error": "age is empty"})		//xatoni qaytarish
 		return
 	}
 
-	if user.City == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "city is empty"})
+	if  user.Age < 16 {							//agar yosh 16 dan kichik bo'lsa			
+		c.JSON(http.StatusBadRequest, gin.H{"error": "age is less than 16"})//xatoni qaytarish
+		return
+	}
+
+	if user.City == "" {						//agar shahar bo'sh bo'lsa
+		c.JSON(http.StatusBadRequest, gin.H{"error": "city is empty"})		//xatoni qaytarish
 		return
 	}
 
 	//db in warehouse table in get all id if WarehouseID == warehouse table in list id element in id == WarehouseID create user 
-	idList := []int{}
-	rows, err := db.Query("SELECT id FROM warehouses")
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	
+	idList := []int{}															//id lar uchun list
+	rows, err := db.Query("SELECT id FROM warehouses")							//id larini olish
+	if err != nil {																//agar xato bo'lsa
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})				//xatoni qaytarish
 		return
 	}
-	for rows.Next() {
-		var id int
-		err = rows.Scan(&id)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	for rows.Next() {															//id larni listga qo'shish	
+		var id int																//id uchun o'zgaruvchi
+		err = rows.Scan(&id)													//id ni olish
+		if err != nil {															//agar xato bo'lsa
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})			//xatoni qaytarish
 			return
 		}
-		idList = append(idList, id)
+		idList = append(idList, id)												//id larni listga qo'shish
 	}
 	//if user.WarehouseID == idList {
-		for _, id := range idList {
-			if user.WarehouseID != id {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "warehouse id is not exist"})
+		for _, id := range idList {												//id larni tekshirish				
+			if user.WarehouseID != id {											//agar id lar teng bo'lmasa
+				c.JSON(http.StatusBadRequest, gin.H{"error": "warehouse id is not exist"})	//xatoni qaytarish
 				return
 			}else {
 				fmt.Println("ok")
@@ -233,14 +235,14 @@ func register(c *gin.Context) {
 			}
 		}
 		
-	var username string
-	err = db.QueryRow("SELECT username FROM users WHERE username = $1", user.Username).Scan(&username)
-	if err == nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "username already exist"})
+	var username string															//username uchun o'zgaruvchi
+	err = db.QueryRow("SELECT username FROM users WHERE username = $1", user.Username).Scan(&username)	//username ni bazadan olish
+	if err == nil {																//agar xato bo'lsa
+		c.JSON(http.StatusBadRequest, gin.H{"error": "username already exist"})	//xatoni qaytarish
 		return
 	}
-
-	_, err = db.Exec("INSERT INTO users (username, email, password, name, surname, age, phone, promocode, status, roles, city, created_at, token, blocked, warehouse_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)", user.Username, user.Email, passwordHash(user.Password), user.Name, user.Surname, user.Age, user.Phone, user.Promocode, user.Status, user.Roles, user.City, user.CreatedAt, user.Token, user.Blocked, user.WarehouseID)
+	
+	_, err = db.Exec("INSERT INTO users (username, email, password, name, surname, age, phone, promocode, status, roles, city, created_at, token, blocked, warehouse_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)", user.Username, user.Email, passwordHash(user.Password), user.Name, user.Surname, user.Age, user.Phone, user.Promocode, user.Status, user.Roles, user.City, user.CreatedAt, user.Token, user.Blocked, user.WarehouseID)	//bazaga yozish
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
