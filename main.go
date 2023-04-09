@@ -305,7 +305,6 @@ func addWarehouse(c *gin.Context) {
 	token = strings.TrimPrefix(token, "Bearer ")
 	claims := jwt.MapClaims{}
 	tkn, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
-		fmt.Println(claims["username"].(string))
 		return []byte("secret"), nil 
 	})
 
@@ -376,7 +375,6 @@ func addCategory(c *gin.Context) {
 	token = strings.TrimPrefix(token, "Bearer ")
 	claims := jwt.MapClaims{}
 	tkn, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
-		fmt.Println(claims["username"].(string))
 		return []byte("secret"), nil 
 	} )
 
