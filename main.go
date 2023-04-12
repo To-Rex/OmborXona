@@ -592,31 +592,7 @@ func addProduct(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
-	// ID          int       `json:"id"`           //id 											1
-	// CatID       string    `json:"cat_id"`       //kategoriyasi									2
-	// ProductID   string    `json:"product_id"`   //mahsulot id									3
-	// WarehouseID float64   `json:"warehouse_id"` //qaysi omborda									4
-	// Name        string    `json:"name"`         //nomi											5
-	// Description string    `json:"description"`  //eslatma										6
-	// Picture     string    `json:"picture"`      //rasmi											7
-	// Cauntry     string    `json:"cauntry"`      //mamlakati										8
-	// Code        float64   `json:"code"`         //kodi											9
-	// Price       float64   `json:"price"`        //sotish narxi									10
-	// Benicifits  float64   `json:"benicifits"`   //foydasi										11
-	// Discount    float64   `json:"discount"`     //skidka					     					12
-	// Currency    string    `json:"currency"`     //valyuta										13
-	// Quantity    float64   `json:"quantity"`     //miqdori										14
-	// Guarantee   float64   `json:"guarantee"`    //garantiya										15
-	// Measurement string    `json:"measurement"`  //o'lchov birligi - soni				    		16
-	// Parts       string    `json:"parts"`        //qismi - partiya					 			17
-	// Barcode     string    `json:"barcode"`      //barkod									    	18
-	// Brand       string    `json:"brand"`        //brendi									    	19
-	// Type        string    `json:"type"`         //turi - tipi									20
-	// CreatedAt   time.Time `json:"created_at"`   //yaratilgan vaqti								21
-	// CreatedBy   string    `json:"created_by"`   //yaratgan foydalanuvchi						    22
-	// Status      string    `json:"status"`       //holati										    23
-
+	
 	if product.Name == "" {   //agar name bo'sh bo'lsa
 		c.JSON(http.StatusBadRequest, gin.H{"error": "name is empty"}) //error qaytarish
 		return
@@ -693,13 +669,11 @@ func addProduct(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "cat_id is empty"})
 		return
 	}
-	//if connect db in products table not exist create table 
 	_, err = db.Exec("CREATE TABLE IF NOT EXISTS products (id SERIAL PRIMARY KEY, cat_id TEXT, product_id TEXT, warehouse_id FLOAT, name TEXT, description TEXT, picture TEXT, cauntry TEXT, code FLOAT, price FLOAT, benicifits FLOAT, discount FLOAT, currency TEXT, quantity FLOAT, guarantee FLOAT, measurement TEXT, parts TEXT, barcode TEXT, brand TEXT, type TEXT, created_at TIMESTAMP, created_by TEXT, status TEXT)")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	//save to db 
 	_, err = db.Exec("INSERT INTO products (cat_id, product_id, warehouse_id, name, description, picture, cauntry, code, price, benicifits, discount, currency, quantity, guarantee, measurement, parts, barcode, brand, type, created_at, created_by, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)", product.CatID, product.ProductID, product.WarehouseID, product.Name, product.Description, product.Picture, product.Cauntry, product.Code, product.Price, product.Benicifits, product.Discount, product.Currency, product.Quantity, product.Guarantee, product.Measurement, product.Parts, product.Barcode, product.Brand, product.Type, product.CreatedAt, product.CreatedBy, product.Status)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
