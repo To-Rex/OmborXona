@@ -693,9 +693,12 @@ func addProduct(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "cat_id is empty"})
 		return
 	}
-	//if connect db in products table empty
-
-
+	//if connect db in products table not exist create table 
+	_, err = db.Exec("CREATE TABLE IF NOT EXISTS products (id SERIAL PRIMARY KEY, cat_id TEXT, product_id TEXT, warehouse_id FLOAT, name TEXT, description TEXT, picture TEXT, cauntry TEXT, code FLOAT, price FLOAT, benicifits FLOAT, discount FLOAT, currency TEXT, quantity FLOAT, guarantee FLOAT, measurement TEXT, parts TEXT, barcode TEXT, brand TEXT, type TEXT, created_at TIMESTAMP, created_by TEXT, status TEXT)")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 	//save to db 
 	_, err = db.Exec("INSERT INTO products (cat_id, product_id, warehouse_id, name, description, picture, cauntry, code, price, benicifits, discount, currency, quantity, guarantee, measurement, parts, barcode, brand, type, created_at, created_by, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)", product.CatID, product.ProductID, product.WarehouseID, product.Name, product.Description, product.Picture, product.Cauntry, product.Code, product.Price, product.Benicifits, product.Discount, product.Currency, product.Quantity, product.Guarantee, product.Measurement, product.Parts, product.Barcode, product.Brand, product.Type, product.CreatedAt, product.CreatedBy, product.Status)
 	if err != nil {
