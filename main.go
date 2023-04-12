@@ -156,7 +156,7 @@ type Report struct { //hisobotlar
 	ID          int       `json:"id"`           //id											1
 	ReportID    string    `json:"report_id"`    //hisobot id									2
 	ProductID   string    `json:"product_id"`   //mahsulot id									3
-	WarehouseID int   `json:"warehouse_id"` //qaysi omborda									4
+	WarehouseID int       `json:"warehouse_id"` //qaysi omborda									4
 	Name        string    `json:"name"`         //nomi											5
 	Description string    `json:"description"`  //eslatma										6
 	Picture     string    `json:"picture"`      //rasmi											7
@@ -539,7 +539,6 @@ func addCategory(c *gin.Context) {
 	}
 	var name string
 	var warehouse_id int
-	//if db in name if any and warehouse_id and row in warehouse_id available return error
 	err = db.QueryRow("SELECT name, warehouse_id FROM categories WHERE name = $1 AND warehouse_id = $2", category.Name, category.WarehouseID).Scan(&name, &warehouse_id)
 	if err == nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "name already exist"})
@@ -592,7 +591,7 @@ func addProduct(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	if product.Name == "" {   //agar name bo'sh bo'lsa
 		c.JSON(http.StatusBadRequest, gin.H{"error": "name is empty"}) //error qaytarish
 		return
@@ -679,7 +678,41 @@ func addProduct(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	var Report Report
+	Report.ReportID = generateUserId()
+	Report.ProductID = product.ProductID
+	Report.WarehouseID = product.WarehouseID
+	Report.Name = product.Name
+	Report.Description = product.Description
+	Report.Picture = product.Picture
+	Report.Cauntry = product.Cauntry
+	Report.Code = product.Code
+	Report.Price = product.Price
+	Report.Addition = 0
+	Report.Benicifits = 0
+	Report.Discount = 0
+	Report.Currency = product.Currency
+	Report.Quantity = product.Quantity
+	Report.Guarantee = product.Guarantee
+	Report.Measurement = product.Measurement
+	Report.Parts = product.Parts
+	Report.Barcode = product.Barcode
+	Report.Brand = product.Brand
+	Report.Type = product.Type
+	Report.CreatedAt = time.Now()
+	Report.CreatedBy = product.CreatedBy
+	Report.Status = product.Status
 
+	_, err = db.Exec("CREATE TABLE IF NOT EXISTS reports (id SERIAL PRIMARY KEY, report_id TEXT, product_id TEXT, warehouse_id FLOAT, name TEXT, description TEXT, picture TEXT, cauntry TEXT, code FLOAT, price FLOAT, addition FLOAT, benicifits FLOAT, discount FLOAT, currency TEXT, quantity FLOAT, guarantee FLOAT, measurement TEXT, parts TEXT, barcode TEXT, brand TEXT, type TEXT, created_at TIMESTAMP, created_by TEXT, status TEXT)")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	
+	_, err = db.Exec("INSERT INTO reports (report_id, product_id, warehouse_id, name, description, picture, cauntry, code, price, addition, benicifits, discount, currency, quantity, guarantee, measurement, parts, barcode, brand, type, created_at, created_by, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)", Report.ReportID, Report.ProductID, Report.WarehouseID, Report.Name, Report.Description, Report.Picture, Report.Cauntry, Report.Code, Report.Price, Report.Addition, Report.Benicifits, Report.Discount, Report.Currency, Report.Quantity, Report.Guarantee, Report.Measurement, Report.Parts, Report.Barcode, Report.Brand, Report.Type, Report.CreatedAt, Report.CreatedBy, Report.Status)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{"status": "success"})
-
 }
