@@ -65,7 +65,7 @@ type Product struct { //mahsulot
 	ID          int       `json:"id"`           //id 											1
 	CatID       string    `json:"cat_id"`       //kategoriyasi									2
 	ProductID   string    `json:"product_id"`   //mahsulot id									3
-	WarehouseID float64   `json:"warehouse_id"` //qaysi omborda									4
+	WarehouseID int   `json:"warehouse_id"` //qaysi omborda									4
 	Name        string    `json:"name"`         //nomi											5
 	Description string    `json:"description"`  //eslatma										6
 	Picture     string    `json:"picture"`      //rasmi											7
@@ -91,7 +91,7 @@ type Order struct { //buyurtmalar
 	ID          int       `json:"id"`           //id											1
 	OrderID     string    `json:"order_id"`     //buyurtma id									2
 	ProductID   string    `json:"product_id"`   //mahsulot id									3
-	WarehouseID float64   `json:"warehouse_id"` //qaysi omborda									4
+	WarehouseID int   `json:"warehouse_id"` //qaysi omborda									4
 	Quantity    float64   `json:"quantity"`     //miqdori										5
 	Price       float64   `json:"price"`        //narxi											6
 	Currency    string    `json:"currency"`     //valyuta										7
@@ -109,7 +109,7 @@ type Order struct { //buyurtmalar
 type OrderHistory struct { //buyurtma tarixi
 	ID          int       `json:"id"`           //id											1
 	OrderID     string    `json:"order_id"`     //buyurtma id									2
-	ProductID   string    `json:"product_id"`   //mahsulot id									3
+	ProductID   int    `json:"product_id"`   //mahsulot id									3
 	WarehouseID float64   `json:"warehouse_id"` //qaysi omborda									4
 	Quantity    float64   `json:"quantity"`     //miqdori										5
 	Price       float64   `json:"price"`        //narxi											6
@@ -128,7 +128,7 @@ type OrderHistory struct { //buyurtma tarixi
 type ProductHistory struct { //mahsulot tarixi
 	ID          int       `json:"id"`           //id 											1
 	CatID       string    `json:"cat_id"`       //kategoriyasi									2
-	ProductID   string    `json:"product_id"`   //mahsulot id									3
+	ProductID   int    `json:"product_id"`   //mahsulot id									3
 	WarehouseID float64   `json:"warehouse_id"` //qaysi omborda									4
 	Name        string    `json:"name"`         //nomi											5
 	Description string    `json:"description"`  //eslatma										6
@@ -156,13 +156,14 @@ type Report struct { //hisobotlar
 	ID          int       `json:"id"`           //id											1
 	ReportID    string    `json:"report_id"`    //hisobot id									2
 	ProductID   string    `json:"product_id"`   //mahsulot id									3
-	WarehouseID float64   `json:"warehouse_id"` //qaysi omborda									4
+	WarehouseID int   `json:"warehouse_id"` //qaysi omborda									4
 	Name        string    `json:"name"`         //nomi											5
 	Description string    `json:"description"`  //eslatma										6
 	Picture     string    `json:"picture"`      //rasmi											7
 	Cauntry     string    `json:"cauntry"`      //mamlakati										8
 	Code        float64   `json:"code"`         //kodi											9
 	Price       float64   `json:"price"`        //sotish narxi									10
+	Addition    float64   `json:"addition"`     //qo'shimcha to'lov								11
 	Benicifits  float64   `json:"benicifits"`   //foydasi										11
 	Discount    float64   `json:"discount"`     //skidka										12
 	Currency    string    `json:"currency"`     //valyuta										13
@@ -223,6 +224,7 @@ func main() {
 	r.POST("/logout", logout)             //Chiqish
 	r.POST("/addWarehouse", addWarehouse) //Ombor qo'shish
 	r.POST("/addCategory", addCategory)   //Kategoriya qo'shish
+	r.POST("/addProduct", addProduct)     //Mahsulot qo'shish
 	r.Run()                               //Serverni ishga tushirish
 }
 
@@ -551,4 +553,156 @@ func addCategory(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "success"})
+}
+
+func addProduct(c *gin.Context) {
+	token := c.GetHeader("Authorization")
+	token = strings.TrimPrefix(token, "Bearer ")
+	claims := jwt.MapClaims{}
+	tkn, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte("secret"), nil
+	})
+
+	if claims["roles"] == "user" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "you are not creator or boss"})
+		return
+	}
+	if err != nil {
+		if err == jwt.ErrSignatureInvalid {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+			return
+		}
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !tkn.Valid {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	var user User
+	db := connectDB()
+	err = db.QueryRow("SELECT id, username, email, password, name, surname, age, phone, status, roles, city, created_at, token, blocked, warehouse_id FROM users WHERE username = $1", claims["username"]).Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.Name, &user.Surname, &user.Age, &user.Phone, &user.Status, &user.Roles, &user.City, &user.CreatedAt, &user.Token, &user.Blocked, &user.WarehouseID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	var product Product
+	err = c.BindJSON(&product)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// ID          int       `json:"id"`           //id 											1
+	// CatID       string    `json:"cat_id"`       //kategoriyasi									2
+	// ProductID   string    `json:"product_id"`   //mahsulot id									3
+	// WarehouseID float64   `json:"warehouse_id"` //qaysi omborda									4
+	// Name        string    `json:"name"`         //nomi											5
+	// Description string    `json:"description"`  //eslatma										6
+	// Picture     string    `json:"picture"`      //rasmi											7
+	// Cauntry     string    `json:"cauntry"`      //mamlakati										8
+	// Code        float64   `json:"code"`         //kodi											9
+	// Price       float64   `json:"price"`        //sotish narxi									10
+	// Benicifits  float64   `json:"benicifits"`   //foydasi										11
+	// Discount    float64   `json:"discount"`     //skidka					     					12
+	// Currency    string    `json:"currency"`     //valyuta										13
+	// Quantity    float64   `json:"quantity"`     //miqdori										14
+	// Guarantee   float64   `json:"guarantee"`    //garantiya										15
+	// Measurement string    `json:"measurement"`  //o'lchov birligi - soni				    		16
+	// Parts       string    `json:"parts"`        //qismi - partiya					 			17
+	// Barcode     string    `json:"barcode"`      //barkod									    	18
+	// Brand       string    `json:"brand"`        //brendi									    	19
+	// Type        string    `json:"type"`         //turi - tipi									20
+	// CreatedAt   time.Time `json:"created_at"`   //yaratilgan vaqti								21
+	// CreatedBy   string    `json:"created_by"`   //yaratgan foydalanuvchi						    22
+	// Status      string    `json:"status"`       //holati										    23
+
+	if product.Name == "" {   //agar name bo'sh bo'lsa
+		c.JSON(http.StatusBadRequest, gin.H{"error": "name is empty"}) //error qaytarish
+		return
+	}
+
+	if product.Cauntry == "" {   //agar mamlakat bo'sh bo'lsa
+		product.Cauntry = "Uzbekistan" //mamlakatni Uzbekiston qilish
+	}
+
+	if product.Code == 0 {   //agar kodi bo'sh bo'lsa
+		product.Code = 1 //kodi 1 qilish
+	}
+
+	if product.Price < 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "price is empty"})
+		return
+	}
+
+	if product.Benicifits < 0 {
+		product.Price -= product.Benicifits
+	}
+
+	if product.Discount <= 0 {
+		product.Discount = 0
+	}
+
+	if product.Currency == "" {
+		product.Currency = "UZS"
+	}
+
+	if product.Quantity < 0 || product.Quantity == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "quantity is empty"})
+		return
+	}
+
+	if product.Guarantee < 0 || product.Guarantee == 0{
+		product.Guarantee = 0
+	}
+
+	if product.Measurement == "" {
+		product.Measurement = "DONA"
+	}
+
+	if product.Parts == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "parts is empty"})
+		return
+	}
+
+	if product.Barcode == "" {
+		product.Barcode = product.Name
+	}
+
+	if product.Brand == "" {
+		product.Brand = "No brand"
+	}
+	
+	if product.Type == "" {
+		product.Type = "No type"
+	}
+
+	if product.Status == "" {
+		product.Status = "active"
+	}
+
+	product.CreatedAt = time.Now()
+	product.CreatedBy = claims["username"].(string)
+	product.ProductID = generateUserId()
+	if user.Roles != "boss" {
+		product.WarehouseID = user.WarehouseID
+	}else {
+		product.WarehouseID = 1
+	}
+	if product.CatID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "cat_id is empty"})
+		return
+	}
+	//if connect db in products table empty
+
+
+	//save to db 
+	_, err = db.Exec("INSERT INTO products (cat_id, product_id, warehouse_id, name, description, picture, cauntry, code, price, benicifits, discount, currency, quantity, guarantee, measurement, parts, barcode, brand, type, created_at, created_by, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)", product.CatID, product.ProductID, product.WarehouseID, product.Name, product.Description, product.Picture, product.Cauntry, product.Code, product.Price, product.Benicifits, product.Discount, product.Currency, product.Quantity, product.Guarantee, product.Measurement, product.Parts, product.Barcode, product.Brand, product.Type, product.CreatedAt, product.CreatedBy, product.Status)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "success"})
+
 }
