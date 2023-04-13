@@ -164,6 +164,7 @@ type Report struct { //hisobotlar
 	Code        float64   `json:"code"`         //kodi											9
 	Price       float64   `json:"price"`        //sotish narxi									10
 	Addition    float64   `json:"addition"`     //qo'shimcha to'lov								11
+	ReportStatus string   `json:"report_status"`//hisobot holati								12
 	Benicifits  float64   `json:"benicifits"`   //foydasi										11
 	Discount    float64   `json:"discount"`     //skidka										12
 	Currency    string    `json:"currency"`     //valyuta										13
@@ -689,6 +690,7 @@ func addProduct(c *gin.Context) {
 	Report.Code = product.Code
 	Report.Price = product.Price
 	Report.Addition = 0
+	Report.ReportStatus = "added"
 	Report.Benicifits = 0
 	Report.Discount = 0
 	Report.Currency = product.Currency
@@ -703,16 +705,17 @@ func addProduct(c *gin.Context) {
 	Report.CreatedBy = product.CreatedBy
 	Report.Status = product.Status
 
-	_, err = db.Exec("CREATE TABLE IF NOT EXISTS reports (id SERIAL PRIMARY KEY, report_id TEXT, product_id TEXT, warehouse_id FLOAT, name TEXT, description TEXT, picture TEXT, cauntry TEXT, code FLOAT, price FLOAT, addition FLOAT, benicifits FLOAT, discount FLOAT, currency TEXT, quantity FLOAT, guarantee FLOAT, measurement TEXT, parts TEXT, barcode TEXT, brand TEXT, type TEXT, created_at TIMESTAMP, created_by TEXT, status TEXT)")
+	_, err = db.Exec("CREATE TABLE IF NOT EXISTS reports (id SERIAL PRIMARY KEY, report_id TEXT, product_id TEXT, warehouse_id FLOAT, name TEXT, description TEXT, picture TEXT, cauntry TEXT, code FLOAT, price FLOAT, addition FLOAT, report_status TEXT, benicifits FLOAT, discount FLOAT, currency TEXT, quantity FLOAT, guarantee FLOAT, measurement TEXT, parts TEXT, barcode TEXT, brand TEXT, type TEXT, created_at TIMESTAMP, created_by TEXT, status TEXT)")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	
-	_, err = db.Exec("INSERT INTO reports (report_id, product_id, warehouse_id, name, description, picture, cauntry, code, price, addition, benicifits, discount, currency, quantity, guarantee, measurement, parts, barcode, brand, type, created_at, created_by, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)", Report.ReportID, Report.ProductID, Report.WarehouseID, Report.Name, Report.Description, Report.Picture, Report.Cauntry, Report.Code, Report.Price, Report.Addition, Report.Benicifits, Report.Discount, Report.Currency, Report.Quantity, Report.Guarantee, Report.Measurement, Report.Parts, Report.Barcode, Report.Brand, Report.Type, Report.CreatedAt, Report.CreatedBy, Report.Status)
+	_, err = db.Exec("INSERT INTO reports (report_id, product_id, warehouse_id, name, description, picture, cauntry, code, price, addition, report_status, benicifits, discount, currency, quantity, guarantee, measurement, parts, barcode, brand, type, created_at, created_by, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)", Report.ReportID, Report.ProductID, Report.WarehouseID, Report.Name, Report.Description, Report.Picture, Report.Cauntry, Report.Code, Report.Price, Report.Addition, Report.ReportStatus, Report.Benicifits, Report.Discount, Report.Currency, Report.Quantity, Report.Guarantee, Report.Measurement, Report.Parts, Report.Barcode, Report.Brand, Report.Type, Report.CreatedAt, Report.CreatedBy, Report.Status)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{"status": "success"})
 }
