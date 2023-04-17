@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	_ "github.com/lib/pq"
@@ -76,7 +78,7 @@ type Product struct { //mahsulot
 	ID          int       `json:"id"`           //id 											1
 	CatID       string    `json:"cat_id"`       //kategoriyasi									2
 	ProductID   string    `json:"product_id"`   //mahsulot id									3
-	WarehouseID int   `json:"warehouse_id"` //qaysi omborda									4
+	WarehouseID int   `json:"warehouse_id"` 	//qaysi omborda									4
 	Name        string    `json:"name"`         //nomi											5
 	Description string    `json:"description"`  //eslatma										6
 	Picture     string    `json:"picture"`      //rasmi											7
@@ -787,7 +789,43 @@ func addMagazineProduct(c *gin.Context){
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
-
-	//add magazineproduct update Catagory product update product
-	
+	var product Product
+	db := connectDB()
+	 err = db.QueryRow("SELECT * FROM products WHERE product_id = $1", c.Query("productId")).Scan(&product.ID, &product.CatID, &product.ProductID, &product.WarehouseID, &product.Name, &product.Description, &product.Picture, &product.Cauntry, &product.Code, &product.Price, &product.Benicifits, &product.Discount, &product.Currency, &product.Quantity, &product.Guarantee, &product.Measurement, &product.Parts, &product.Barcode, &product.Brand, &product.Type, &product.CreatedAt, &product.CreatedBy, &product.Status)
+	 if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	 }
+	 quality := c.Query("quality")
+	 if quality == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "quality is empty"})
+		return
+	 }
+	 qualityFloat, err := strconv.ParseFloat(quality, 64)
+	 if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	 }
+	 if qualityFloat > product.Quantity {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "quality is more than product quantity"})
+		return
+	 }
+	 product.Quantity = product.Quantity - qualityFloat
+	 
+	 _, err = db.Exec("CREATE TABLE IF NOT EXISTS magazine_products (id SERIAL PRIMARY KEY, cat_id TEXT, product_id TEXT, warehouse_id INT, name TEXT, description TEXT, picture TEXT, cauntry TEXT, code FLOAT, price FLOAT, benicifits FLOAT, discount FLOAT, currency TEXT, quantity FLOAT, guarantee FLOAT, measurement TEXT, parts TEXT, barcode TEXT, brand TEXT, type TEXT, created_at TIMESTAMP, created_by TEXT, status TEXT)")
+	 if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	 }
+	 _, err = db.Exec("INSERT INTO magazine_products (cat_id, product_id, warehouse_id, name, description, picture, cauntry, code, price, benicifits, discount, currency, quantity, guarantee, measurement, parts, barcode, brand, type, created_at, created_by, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)", product.CatID, product.ProductID, product.WarehouseID, product.Name, product.Description, product.Picture, product.Cauntry, product.Code, product.Price, product.Benicifits, product.Discount, product.Currency, qualityFloat, product.Guarantee, product.Measurement, product.Parts, product.Barcode, product.Brand, product.Type, time.Now(), product.CreatedBy, "active")
+	 if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	 }
+	 _, err = db.Exec("UPDATE products SET quantity = $1 WHERE product_id = $2", product.Quantity, product.ProductID)
+	 if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	 }
+	 c.JSON(http.StatusOK, gin.H{"message": "success"})
 }
