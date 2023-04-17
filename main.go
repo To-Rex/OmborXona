@@ -61,6 +61,17 @@ type Category struct { //kategoriyalar
 	WarehouseID int       `json:"warehouse_id"` //qaysi omborda									8
 }
 
+type Magazine struct { //magazine
+	ID          int       `json:"id"`           //id											1
+	MagazineID  string    `json:"magazine_id"`  //magazine id									2
+	WarehouseID int       `json:"warehouse_id"` //qaysi omborda									3
+	Name        string    `json:"name"`         //nomi											4
+	Description string    `json:"description"`  //eslatma										5
+	CreatedAt   time.Time `json:"created_at"`   //yaratilgan vaqti								6
+	CreatedBy   string    `json:"created_by"`   //yaratgan foydalanuvchi						7
+	Status      string    `json:"status"`       //holati										8
+}
+
 type Product struct { //mahsulot
 	ID          int       `json:"id"`           //id 											1
 	CatID       string    `json:"cat_id"`       //kategoriyasi									2
@@ -86,45 +97,6 @@ type Product struct { //mahsulot
 	CreatedBy   string    `json:"created_by"`   //yaratgan foydalanuvchi						22
 	Status      string    `json:"status"`       //holati										23
 }
-
-type Order struct { //buyurtmalar
-	ID          int       `json:"id"`           //id											1
-	OrderID     string    `json:"order_id"`     //buyurtma id									2
-	ProductID   string    `json:"product_id"`   //mahsulot id									3
-	WarehouseID int   `json:"warehouse_id"` //qaysi omborda									4
-	Quantity    float64   `json:"quantity"`     //miqdori										5
-	Price       float64   `json:"price"`        //narxi											6
-	Currency    string    `json:"currency"`     //valyuta										7
-	Discount    float64   `json:"discount"`     //skidka			
-	Country     string    `json:"country"`      //mamlakati										9
-	Code 	  	float64   `json:"code"`         //kodi											10
-	Barcode     string    `json:"barcode"`      //barkod										11
-	Brand       string    `json:"brand"`        //brendi										12
-	Type        string    `json:"type"`         //turi - tipi									13
-	CreatedAt   time.Time `json:"created_at"`   //yaratilgan vaqti								14
-	CreatedBy   string    `json:"created_by"`   //yaratgan foydalanuvchi						15
-	Status      string    `json:"status"`       //holati										16
-}
-
-type OrderHistory struct { //buyurtma tarixi
-	ID          int       `json:"id"`           //id											1
-	OrderID     string    `json:"order_id"`     //buyurtma id									2
-	ProductID   int    `json:"product_id"`   //mahsulot id									3
-	WarehouseID float64   `json:"warehouse_id"` //qaysi omborda									4
-	Quantity    float64   `json:"quantity"`     //miqdori										5
-	Price       float64   `json:"price"`        //narxi											6
-	Currency    string    `json:"currency"`     //valyuta										7
-	Discount    float64   `json:"discount"`     //skidka
-	Country     string    `json:"country"`      //mamlakati										9
-	Code 	  	float64   `json:"code"`         //kodi											10
-	Barcode     string    `json:"barcode"`      //barkod										11
-	Brand       string    `json:"brand"`        //brendi										12
-	Type        string    `json:"type"`         //turi - tipi									13
-	CreatedAt   time.Time `json:"created_at"`   //yaratilgan vaqti								14
-	CreatedBy   string    `json:"created_by"`   //yaratgan foydalanuvchi						15
-	Status      string    `json:"status"`       //holati										16
-}
-
 type ProductHistory struct { //mahsulot tarixi
 	ID          int       `json:"id"`           //id 											1
 	CatID       string    `json:"cat_id"`       //kategoriyasi									2
@@ -226,6 +198,8 @@ func main() {
 	r.POST("/addWarehouse", addWarehouse) //Ombor qo'shish
 	r.POST("/addCategory", addCategory)   //Kategoriya qo'shish
 	r.POST("/addProduct", addProduct)     //Mahsulot qo'shish
+	r.POST("/addMagazine", addMagazine)   //Jadval qo'shish
+	r.POST("/addMagazineProduct", addMagazineProduct) //Jadvalga mahsulot qo'shish
 	r.Run()                               //Serverni ishga tushirish
 }
 
@@ -498,7 +472,7 @@ func addCategory(c *gin.Context) {
 		return []byte("secret"), nil
 	})
 
-	if claims["roles"] != "boss" {
+	if claims["roles"] != "boss"{
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "you are not creator or boss"})
 		return
 	}
@@ -718,4 +692,102 @@ func addProduct(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "success"})
+}
+
+func addMagazine(c *gin.Context){
+	token := c.GetHeader("Authorization")
+	token = strings.TrimPrefix(token, "Bearer ")
+	claims := jwt.MapClaims{}
+	tkn, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte("secret"), nil
+	})
+
+	if claims["roles"] != "boss"{
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "you are not creator or boss"})
+		return
+	}
+
+	if err != nil {
+		if err == jwt.ErrSignatureInvalid {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+			return
+		}
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !tkn.Valid {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	var magazine Magazine
+	if err := c.ShouldBindJSON(&magazine); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	db := connectDB()
+	magazine.CreatedAt = time.Now()
+	magazine.CreatedBy = claims["username"].(string)
+	magazine.MagazineID = generateUserId()
+	magazine.Status = "active"
+
+	if magazine.Name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "name is empty"})
+		return
+	}
+	if magazine.Description == "" {
+		magazine.Description = "no description"
+	}
+	if magazine.CreatedBy == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "created_by is empty"})
+		return
+	}
+	if magazine.Status == "no active"{
+		c.JSON(http.StatusBadRequest, gin.H{"error": "status is empty"})
+		return
+	}
+
+	_, err = db.Exec("CREATE TABLE IF NOT EXISTS magazines (id SERIAL PRIMARY KEY, magazine_id TEXT, warehouse_id FLOAT, name TEXT, description TEXT, created_at TIMESTAMP, created_by TEXT, status TEXT)")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	_, err = db.Exec("INSERT INTO magazines (magazine_id, warehouse_id, name, description, created_at, created_by, status) VALUES ($1, $2, $3, $4, $5, $6, $7)", magazine.MagazineID, magazine.WarehouseID, magazine.Name, magazine.Description, magazine.CreatedAt, magazine.CreatedBy, magazine.Status)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "success"})
+}
+
+func addMagazineProduct(c *gin.Context){
+	token := c.GetHeader("Authorization")
+	token = strings.TrimPrefix(token, "Bearer ")
+	claims := jwt.MapClaims{}
+	tkn, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte("secret"), nil
+	})
+
+	if claims["roles"] == "user" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "you are not creator or boss"})
+		return
+	}
+	if err != nil {
+		if err == jwt.ErrSignatureInvalid {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+			return
+		}
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !tkn.Valid {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	//add magazineproduct update Catagory product update product
+	
 }
