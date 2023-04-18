@@ -102,7 +102,7 @@ type Product struct { //mahsulot
 type ProductHistory struct { //mahsulot tarixi
 	ID          int       `json:"id"`           //id 											1
 	CatID       string    `json:"cat_id"`       //kategoriyasi									2
-	ProductID   int    `json:"product_id"`   //mahsulot id									3
+	ProductID   int    	  `json:"product_id"`   //mahsulot id									3
 	WarehouseID float64   `json:"warehouse_id"` //qaysi omborda									4
 	Name        string    `json:"name"`         //nomi											5
 	Description string    `json:"description"`  //eslatma										6
@@ -322,6 +322,7 @@ func register(c *gin.Context) { 									 //Ro'yxatdan o'tish
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "success"})
+	db.Close()
 }
 
 func login(c *gin.Context) {
@@ -363,6 +364,7 @@ func login(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"token": token})
+	db.Close()
 }
 
 func logout(c *gin.Context) {
@@ -393,6 +395,7 @@ func logout(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "success"})
+	db.Close()
 }
 
 func addWarehouse(c *gin.Context) {
@@ -464,6 +467,7 @@ func addWarehouse(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "success"})
+	db.Close()
 }
 
 func addCategory(c *gin.Context) {
@@ -529,6 +533,7 @@ func addCategory(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "success"})
+	db.Close()
 }
 
 func addProduct(c *gin.Context) {
@@ -694,6 +699,7 @@ func addProduct(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "success"})
+	db.Close()
 }
 
 func addMagazine(c *gin.Context){
@@ -763,6 +769,7 @@ func addMagazine(c *gin.Context){
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "success"})
+	db.Close()
 }
 
 func addMagazineProduct(c *gin.Context){
@@ -817,15 +824,30 @@ func addMagazineProduct(c *gin.Context){
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	 }
-	 _, err = db.Exec("INSERT INTO magazine_products (cat_id, product_id, warehouse_id, name, description, picture, cauntry, code, price, benicifits, discount, currency, quantity, guarantee, measurement, parts, barcode, brand, type, created_at, created_by, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)", product.CatID, product.ProductID, product.WarehouseID, product.Name, product.Description, product.Picture, product.Cauntry, product.Code, product.Price, product.Benicifits, product.Discount, product.Currency, qualityFloat, product.Guarantee, product.Measurement, product.Parts, product.Barcode, product.Brand, product.Type, time.Now(), product.CreatedBy, "active")
+
+	 //if magazine_products product_id is exist then add quantity else create new row
+	 var magazineProduct Product
+	 err = db.QueryRow("SELECT * FROM magazine_products WHERE product_id = $1", product.ProductID).Scan(&magazineProduct.ID, &magazineProduct.CatID, &magazineProduct.ProductID, &magazineProduct.WarehouseID, &magazineProduct.Name, &magazineProduct.Description, &magazineProduct.Picture, &magazineProduct.Cauntry, &magazineProduct.Code, &magazineProduct.Price, &magazineProduct.Benicifits, &magazineProduct.Discount, &magazineProduct.Currency, &magazineProduct.Quantity, &magazineProduct.Guarantee, &magazineProduct.Measurement, &magazineProduct.Parts, &magazineProduct.Barcode, &magazineProduct.Brand, &magazineProduct.Type, &magazineProduct.CreatedAt, &magazineProduct.CreatedBy, &magazineProduct.Status)
 	 if err != nil {
+		_, err = db.Exec("INSERT INTO magazine_products (cat_id, product_id, warehouse_id, name, description, picture, cauntry, code, price, benicifits, discount, currency, quantity, guarantee, measurement, parts, barcode, brand, type, created_at, created_by, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)", product.CatID, product.ProductID, product.WarehouseID, product.Name, product.Description, product.Picture, product.Cauntry, product.Code, product.Price, product.Benicifits, product.Discount, product.Currency, qualityFloat, product.Guarantee, product.Measurement, product.Parts, product.Barcode, product.Brand, product.Type, product.CreatedAt, product.CreatedBy, product.Status)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+	 } else {
+		_, err = db.Exec("UPDATE magazine_products SET quantity = $1 WHERE cat_id = $2 AND product_id = $3", magazineProduct.Quantity + qualityFloat, product.CatID, product.ProductID)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+	}
+
+	_, err = db.Exec("UPDATE products SET quantity = $1 WHERE product_id = $2", product.Quantity, product.ProductID)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
-	 }
-	 _, err = db.Exec("UPDATE products SET quantity = $1 WHERE product_id = $2", product.Quantity, product.ProductID)
-	 if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	 }
+	}
 	 c.JSON(http.StatusOK, gin.H{"message": "success"})
+	 db.Close()
 }
+
